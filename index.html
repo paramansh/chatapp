@@ -17,7 +17,8 @@
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 <script>
   $(function () {
-  
+    var socket = io('/my-namespace');
+
     var socket = io();
     $('form').submit(function(){
       socket.emit('chat messages', $('#m').val());
