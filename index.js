@@ -4,6 +4,7 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var url = require('url');
+app.set('view engine', 'ejs');
 var bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({extended: true}));
 var MongoClient = require('mongodb').MongoClient
@@ -45,21 +46,43 @@ app.get('/index.html', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
 
+/*app.get('/aw',function(req,res){
+  message.find(function(err,results){
+    if(err) console.log(err);
+    res.render('index.ejs',{messages:results})
+  })
+
+})*/
 user.find({},function(err,userResults){
   if(err) console.log(err);
 //  console.log(userResults)
   userResults.forEach(function(u_item, u_index){
     app.get('/'+u_item.name,function(req,res){
-      res.sendFile(__dirname + '/index.html');
+    //  res.sendFile(__dirname + '/index.html');
+    var messageArray = [];
       message.find({},function(err,messageResults){
+        var itemProcessed = 0;
         //console.log(messageResults);
         messageResults.forEach(function(m_item,m_index){
+          itemProcessed++;
         //  console.log(m_item+m_index);
           if(m_item.sentOn>u_item.date)
-            console.log(m_item.content);
-
+          {
+            messageArray.push(m_item);
+            //console.log(messageArray);
+            //console.log(m_item.content);
+          }
+        if(itemProcessed == messageResults.length){
+          renderPage();
+        }
         })//check only till first and then print others???
+
       })
+      function renderPage(){
+        res.render('index.ejs',{messages:messageArray})
+      //  console.log(messageArray);
+      }
+
     })
   //  console.log(index + ' \n' +  item.name);
   })
@@ -85,7 +108,24 @@ app.post('/putUsername',function(req,res){
         if(err) return console.log(err);
         console.log('saved to database');
         app.get('/'+user1.name,function(req,res){
-          res.sendFile(__dirname+'/index.html');
+          //res.sendFile(__dirname+'/index.html')
+          var messageArray = [];
+            message.find({},function(err,messageResults){
+              var itemProcessed = 0;
+              messageResults.forEach(function(m_item,m_index){
+                itemProcessed++;
+                if(m_item.sentOn>user1.date)
+                {
+                  messageArray.push(m_item);
+                }
+              if(itemProcessed == messageResults.length){
+                renderPage();
+              }
+              })
+            })
+            function renderPage(){
+              res.render('index.ejs',{messages:messageArray})
+            }
         })
         res.redirect('/');
       })
@@ -103,10 +143,10 @@ app.post('/checkUsername',function(req,res){
   if(err) console.log(err);
   if(!result){
     console.log('not found');
-
+    res.redirect('/')
   }
-  else console.log(result);
-  res.redirect('/'+req.body.name);
+  else {console.log(result);
+  res.redirect('/'+req.body.name);}
 })
 })
 
