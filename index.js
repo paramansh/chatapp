@@ -84,6 +84,9 @@ app.post('/putUsername',function(req,res){
       user1.save(function(err,user1){
         if(err) return console.log(err);
         console.log('saved to database');
+        app.get('/'+user1.name,function(req,res){
+          res.sendFile(__dirname+'/index.html');
+        })
         res.redirect('/');
       })
     }
