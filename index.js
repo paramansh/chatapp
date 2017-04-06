@@ -38,13 +38,19 @@ var messageSchema = mongoose.Schema({
 });
 var message = mongoose.model('message', messageSchema);
 
+/*user.remove({name:'username'},function(err){
+  if(err) console.log(err);
+  else console.log('removed');
+})*/
+var con ='a'
 app.get('/', function(req, res){
-  res.sendFile(__dirname + '/welcome.html');
+  // res.sendFile(__dirname + '/welcome.html');
+  res.render('welcome.ejs',{content:con})
 });
 
-app.get('/index.html', function(req, res){
+/*app.get('/index.html', function(req, res){
   res.sendFile(__dirname + '/index.html');
-});
+});*/
 
 /*app.get('/aw',function(req,res){
   message.find(function(err,results){
@@ -53,13 +59,20 @@ app.get('/index.html', function(req, res){
   })
 
 })*/
-user.find({},function(err,userResults){
+/*user.find({},function(err,userResults){
   if(err) console.log(err);
 //  console.log(userResults)
   userResults.forEach(function(u_item, u_index){
     app.get('/'+u_item.name,function(req,res){
     //  res.sendFile(__dirname + '/index.html');
     var messageArray = [];
+   message.find({},function(err,messageResults){
+        messageArray = messageResults.filter(function(message){
+        return message.sentOn>u_item.date
+      })
+      console.log(messageArray);
+    })
+
       message.find({},function(err,messageResults){
         var itemProcessed = 0;
         //console.log(messageResults);
@@ -72,10 +85,11 @@ user.find({},function(err,userResults){
             //console.log(messageArray);
             //console.log(m_item.content);
           }
-        if(itemProcessed == messageResults.length){
+      if(itemProcessed == messageResults.length){
           renderPage();
         }
         })//check only till first and then print others???
+
 
       })
       function renderPage(){
@@ -87,7 +101,51 @@ user.find({},function(err,userResults){
   //  console.log(index + ' \n' +  item.name);
   })
   //console.log(results);
+})*/
+function handleGetRequest(user){
+  app.get('/'+user.name,function(req,res){
+    message.find({},function(err,messageResults){
+      res.render('index.ejs',{messages:messageResults.filter(function(message){
+        return message.sentOn>user.date;
+      })})
+    })
+  })
+}
+user.find({},function(err,userResults){
+  if(err) console.log(err);
+  userResults.forEach(function(u_item, u_index){
+    handleGetRequest(u_item);
+//     app.get('/'+u_item.name,function(req,res){
+//       message.find({},function(err,messageResults){
+//         res.render('index.ejs',{messages:messageResults.filter(function(message){
+//           return message.sentOn > u_item.date;
+//         })
+//       })
+//       console.log(messageResults.filter(function(messsage){
+//         return message.sentOn > u_item.date;
+//       }));
+//       })
+    // var messageArray = [];
+    //   message.find({},function(err,messageResults){
+    //     var itemProcessed = 0;
+    //     messageResults.forEach(function(m_item,m_index){
+    //       itemProcessed++;
+    //       if(m_item.sentOn>u_item.date)
+    //       {
+    //         messageArray.push(m_item);
+    //       }
+    //     if(itemProcessed == messageResults.length){
+    //       renderPage();
+    //     }
+    //     })
+    //   })
+    //   function renderPage(){
+    //     res.render('index.ejs',{messages:messageArray})
+    // }
+    // })
+  })
 })
+
 
 //signup
 app.post('/putUsername',function(req,res){
@@ -143,6 +201,7 @@ app.post('/checkUsername',function(req,res){
   if(err) console.log(err);
   if(!result){
     console.log('not found');
+    // con = 'signup first'
     res.redirect('/')
   }
   else {console.log(result);

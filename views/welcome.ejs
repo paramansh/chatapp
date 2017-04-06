@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <title>chat</title>
+
+  </head>
+
+  <body>
+    Login
+    <form action="/checkUsername"  method = "POST">
+    <input type="text" name="name" placeholder="Name">
+    <button type="submit" >SUBMIT</button>
+    </form>
+    Signup
+    <form action="/putUsername"  method = "POST">
+    <input type="text" name="name" placeholder="Name">
+    <button type="submit" >SUBMIT</button>
+    </form>
+<div>
+  <p id='msg'>
+  <%= content %>
+</p>
+
+  </body>
+</html>
