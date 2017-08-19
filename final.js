@@ -9,6 +9,13 @@ var MongoClient = require('mongodb').MongoClient
   , assert = require('assert');
 var url = 'mongodb://localhost:27017/abc';//data saved in abc
 
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
+
+app.use(cookieParser());
+app.use(session({secret:"It's a secret session"}));
+
+
 var database;
 var mongoose = require('mongoose');
 mongoose.connect(url);
@@ -23,6 +30,7 @@ db.once('open',function(){
 
 var userSchema = mongoose.Schema({
   name: String,
+  password: String,
   date: Date
 });
 var user = mongoose.model('user', userSchema);
@@ -34,28 +42,53 @@ var messageSchema = mongoose.Schema({
 });
 var message = mongoose.model('message', messageSchema);
 
-var con ='a';
 app.get('/', function(req, res){
-  res.render('welcome.ejs',{content:con})
-});
+  console.log(req.session)
+  if(req.session.isLogged)
+  {
+  	res.redirect('/users/'+req.session.userName); 
+    // res.sendFile(__dirname + '/index.html')
+    /*user.findOne({name:req.session.userName},function(err,result){
+        if(err) console.log(err);
+        if(!result){//no need.....
+          res.render('welcome.ejs',{content:''});
+        }
+        else{
+          message.find({},function(err,messageResults){
+            res.render('index.ejs',{content: "hello",
+              messages:messageResults.filter(function(message){
+              return message.sentOn>result.date;
+            })})
+          })
+        }
+      })*/
+    // res.render('index.ejs', {content: "", messages: {}});
+  }
+  else{
+    res.redirect('/login')
+  }
+})
 
+app.get('/login', function(req, res){
+  // console.log(req.session);//req.session is same for all requests from a user
+  // res.sendFile(__dirname + '/welcome.html')
+  res.render('welcome.ejs',{content:'heyy'})
 
-/*user.find({},function(err,userResults){
-  if(err) console.log(err);
-  userResults.forEach(function(u_item, u_index){
-  //  handleGetRequest(u_item);
+  });
+
+  app.get('/logout', function(req,res){
+    req.session.isLogged = false;
+    res.redirect('/login');
   })
-})*/
 
 app.post('/putUsername',function(req,res){
   user.findOne({name:req.body.name},function(err,result){
     if(err) console.log(err);
     if(result){
-      console.log('User Already Exists');
-      res.redirect('/');
+    res.render('welcome.ejs',{content:'user already exists'})
     }
     else{
-      var user1 = new user({name:req.body.name,
+      var user1 = new user({name:req.body.name, password:req.body.password,
       date:Date.now()})
       console.log(user1.name);
       console.log('request for new user received');
@@ -68,60 +101,59 @@ app.post('/putUsername',function(req,res){
     }
   })
 })
-
-app.post('/checkUsername',function(req,res){
+app.post('/login',function(req,res){
   console.log('checking....');
-  user.findOne({name:req.body.name},function(err,result){
+  user.findOne({name:req.body.name, password:req.body.password},function(err,result){
   if(err) console.log(err);
   if(!result){
     console.log('not found');
-    // con = 'signup first'
-    res.redirect('/')
+    res.render('welcome.ejs',{content:'signup first / wrong password'})
   }
   else {console.log(result);
-  res.redirect('/users/'+req.body.name);}
+    req.session.isLogged = true;
+    req.session.userName = req.body.name;
+    req.session.cookie.userName = req.body.name;
+    console.log(req.session);
+  // res.redirect('/users/'+req.body.name);
+    res.redirect('/users/'+req.body.name)
+  }
 })
 })
 
 io.on('connection', function(socket){
   console.log('a user connected');
   socket.on('chat messages', function(msg){
+  	console.log(socket.handshake.headers.referer)
+    //console.log(socket.handshake.headers);
     var messagee = new message({content: msg,
-    user:socket.handshake.headers.referer.split('/')[3],
+    user:socket.handshake.headers.referer.split('/')[4],
   sentOn:Date.now()})
   messagee.save(function(err,messagee){
     if(err) console.log(err);
     console.log(messagee);
   })
     socket.emit('chat message', 'me: ' + msg+' sentOn : '+Date.now());
-    socket.broadcast.emit('chat message', msg+' sentOn : '+Date.now());
+    socket.broadcast.emit('chat message',messagee.user +': ' + msg+' sentOn : '+Date.now());
   });
 });
 
 app.get('/users/:username', function(req,res){
-
-  user.findOne({name:req.params.username},function(err,result){
+user.findOne({name:req.params.username},function(err,result){
     if(err) console.log(err);
-    if(!result){
-      res.render('welcome.ejs');
+    if(!result){//no need.....
+      res.render('welcome.ejs',{content:''});
     }
     else{
       message.find({},function(err,messageResults){
-        res.render('index.ejs',{messages:messageResults.filter(function(message){
+        res.render('index.ejs',{content: "hello",
+          messages:messageResults.filter(function(message){
           return message.sentOn>result.date;
         })})
       })
     }
   })
 })
-
-/*function handleGetRequest(user){
-  app.get('/'+user.name,function(req,res){
-    message.find({},function(err,messageResults){
-      res.render('index.ejs',{messages:messageResults.filter(function(message){
-        return message.sentOn>user.date;
-      })})
-    })
-  })
-}
-*/
+user.remove(function(err){
+  if(err) console.log(err);
+  else console.log('removed');
+})

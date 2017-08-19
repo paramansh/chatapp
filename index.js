@@ -43,7 +43,7 @@ var message = mongoose.model('message', messageSchema);
   else console.log('removed');
 })*/
 var con ='a'
-app.get('/', function(req, res){
+app.get('/login', function(req, res){
   // res.sendFile(__dirname + '/welcome.html');
   res.render('welcome.ejs',{content:con})
 });
